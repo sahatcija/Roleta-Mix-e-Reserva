@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Roleta Premiada - Mix Rio FM</title>
+
+  <!-- Fonte Anton do Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* 🔴 Estilo só para o título principal */
+    .titulo-principal {
+      font-family: "Montserrat", bold;
+      font-size: 35px;
+      font-weight: 700;
+      color: #b60000;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
+    .roleta-container {
+      position: relative;
+      width: 400px;
+      height: 400px;
+    }
+
+    canvas {
+      border: 6px solid #b60000;
+      border-radius: 50%;
+    }
+
+    /* Seta */
+    .seta {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 30px solid #b60000;
+      z-index: 10;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 30px;
+      background: #b60000;
+      color: #fff;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #900000;
+    }
+
+    .logo {
+      margin-top: 25px;
+    }
+
+    /* Texto formal */
+    h3 {
+      font-family: "Arial", serif;
+      font-size: 18px;
+      font-style: italic;
+      color: #333;
+    }
+
+    /* POPUP */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(182, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .popup-content {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      text-align: center;
+      width: 350px;
+      max-width: 100%;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .popup-content .popup-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #b60000;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .popup-content .popup-subtitle {
+        font-size: 14px;
+        color: #b60000;
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-weight: 400;
+    }
+
+    .popup-content .titulo-parabens {
+      font-size: 32px;
+      font-weight: 700;
+      color: #b60000;
+      margin-bottom: 5px;
+      font-family: "arial", serif;
+    }
+
+    .popup-content .texto-ganhou {
+      font-size: 16px;
+      color: #555;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .popup-content .premio-box {
+      background: #ffe5e5;
+      border: 2px dashed #b60000;
+      border-radius: 8px;
+      padding: 15px 20px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 60px;
+    }
+
+    .popup-content #premio {
+      font-size: 28px;
+      font-weight: 700;
+      color: #b60000;
+      margin: 0;
+    }
+
+    .popup-content .botao-fechar-popup {
+      background: #b60000;
+      color: #fff;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 20px;
+    }
+
+    .popup-content .botao-fechar-popup:hover {
+        background: #900000;
+    }
+  </style>
+</head>
+<body>
+  <!-- 🔴 Adicionei a classe titulo-principal -->
+  <h1 class="titulo-principal">ROLETA PREMIADA!</h1>
+  
+  <div class="roleta-container">
+    <div class="seta"></div>
+    <canvas id="roleta" width="400" height="400"></canvas>
+  </div>
+  <button onclick="girar()">GIRAR ROLETA</button>
+
+  <div class="logo">
+    <img src="https://mixriofm.com.br/assets/img/radio-mix-rio-fm-logo_.png" width="100" alt="Mix Rio FM">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/2/28/Reserva.jpg" width="100" alt="reserva">
+  </div>
+  <h3>Uma ação MIX Rio FM e Reserva ®</h3>
+
+  <!-- POPUP -->
+  <div class="popup" id="popup">
+    <div class="popup-content">      
+      <p class="popup-title">Roleta Premiada!</p>
+      <p class="popup-subtitle">Mix Rio FM e Reserva</p>
+      <h3 class="titulo-parabens">PARABÉNS!</h3>
+      <div class="premio-box">
+        <p id="premio">Brinde</p>
+      </div>
+      <button onclick="fecharPopup()" class="botao-fechar-popup">FECHAR</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("roleta");
+    const ctx = canvas.getContext("2d");
+    const numSetores = 8;
+    const premios = ["Brinde", "10%", "Brinde", "20%", "Brinde", "30%", "Brinde", "40%"];
+    const anguloSetor = 2 * Math.PI / numSetores;
+
+    let anguloAtual = 0;
+    let girando = false;
+    let velocidade = 0;
+    let desaceleracao = 0;
+
+    // Carregar logo
+    const logo = new Image();
+    logo.src = "https://lojausereserva.vtexassets.com/arquivos/new_logo_header.svg";
+
+    function desenharRoleta() {
+      for (let i = 0; i < numSetores; i++) {
+        ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#ffe5e5";
+        ctx.beginPath();
+        ctx.moveTo(200, 200);
+        ctx.arc(200, 200, 200, anguloSetor * i, anguloSetor * (i + 1));
+        ctx.lineTo(200, 200);
+        ctx.fill();
+
+        ctx.save();
+        ctx.translate(200, 200);
+        ctx.rotate(anguloSetor * i + anguloSetor / 2);
+        ctx.textAlign = "left"; 
+        ctx.fillStyle = "#b60000";
+        ctx.font = "bold 20px Montserrat";
+
+        // Desenhar logo pequeno ao lado do texto
+        ctx.drawImage(logo, 50, -15, 30, 30);
+
+        // Texto
+        ctx.fillText(premios[i], 110, 10);
+        ctx.restore();
+      }
+    }
+
+    function atualizar() {
+      if (!girando) return;
+
+      anguloAtual += velocidade;
+      velocidade -= desaceleracao;
+
+      if (velocidade <= 0) {
+        velocidade = 0;
+        girando = false;
+        mostrarPremio();
+        return;
+      }
+
+      ctx.clearRect(0, 0, 400, 400);
+      ctx.save();
+      ctx.translate(200, 200);
+      ctx.rotate(anguloAtual);
+      ctx.translate(-200, -200);
+      desenharRoleta();
+      ctx.restore();
+
+      requestAnimationFrame(atualizar);
+    }
+
+    function girar() {
+      if (girando) return;
+
+      anguloAtual = anguloAtual % (2 * Math.PI);
+      velocidade = (Math.random() * 0.25) + 0.35;
+      desaceleracao = 0.002;
+      girando = true;
+      atualizar();
+    }
+
+    function mostrarPremio() {
+        let anguloParada = anguloAtual % (2 * Math.PI);
+        let anguloReferenciaSeta = (anguloParada + Math.PI / 2) % (2 * Math.PI);
+        let indice = numSetores - Math.floor(anguloReferenciaSeta / anguloSetor) - 1;
+
+        if (indice < 0) {
+            indice = numSetores + indice;
+        }
+        if (indice >= numSetores) {
+            indice = indice % numSetores;
+        }
+
+      document.getElementById("premio").innerText = "Você ganhou: " + premios[indice];
+      document.getElementById("popup").style.display = "flex";
+    }
+
+    function fecharPopup() {
+      document.getElementById("popup").style.display = "none";
+    }
+
+    // desenha a roleta inicial quando a logo carregar
+    logo.onload = () => desenharRoleta();
+  </script>
+</body>
+</html>
